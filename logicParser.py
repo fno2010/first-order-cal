@@ -471,19 +471,24 @@ equivalient:  exp1 <=> exp2
 """
 
 def show_help():
+    """
+    Print help information
+    """
     display(usage)
+
+prompt = '> '
 
 if '__main__' == __name__:
     show_help()
 
     while True:
-        command = raw_input('> ')
+        command = raw_input(prompt)
         if command in ['quit', 'q']:
             break
         elif command in ['help', 'h']:
             show_help()
         elif command in ['example', 'e']:
-            display('> ' + example)
+            display(prompt + example)
             p.exec(example)
         else:
             p.exec(command)
