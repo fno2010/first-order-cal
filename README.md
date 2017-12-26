@@ -6,10 +6,9 @@ A simple calculator which can convert a first-order logic expression to its CNF
 
 
 > **NOTE:** This is a homework of the AI course for undergraduate students.
-I just make it open source for some study purpose.
+> I just make it open source for some study purpose.
 >
-> The program is based on Python 2.7. I will upgrade it to Python 3 later. But
-may not maintain it for the long term.
+> The program is compatible with both Python 2.7 and Python 3 now.
 
 ## Usage
 
@@ -17,11 +16,11 @@ This calculator is written by PLY (Python Lex & Yacc). You need to install it
 as the dependency. (It should be the only dependency.)
 
 ``` python
-pip2 install --user -r requirements.txt
+pip install --user -r requirements.txt
 ```
 
 And then, you can run it directly or use Python explicitly:
 
 ``` python
-python2 logicParser.py
+python logicParser.py
 ```

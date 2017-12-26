@@ -1,6 +1,10 @@
+#!/usr/bin/env python3
 import ply.lex as lex
 import ply.yacc as yacc
 import re
+import sys
+if sys.version[0] == '3':
+    raw_input = input
 
 symbol = {
     'and' : 'And',
@@ -11,6 +15,15 @@ symbol = {
     'exist' : 'Exist',
     'any' : 'Any'
     }
+
+def display(result='', op=None):
+    """
+    Utility method for display
+    """
+    if op:
+        sys.stdout.write("%s: %s\n\n" % (op, result))
+    else:
+        sys.stdout.write("%s\n" % result)
 
 class logicParser:
     def __init__(self):
@@ -119,7 +132,7 @@ class logicParser:
         def p_var_list_next(p):
             "var_list : var_list ',' VAR"
             p[0] = p[1] + [p[3]]
-        
+
         # Error Handle
         def p_error(p):
             message = p.lexpos
@@ -132,7 +145,7 @@ class logicParser:
         """
         Eliminate All Implication Statement and Equivalent Statement
         in the Tree 'exp'.
-        
+
         Return None
         """
         name = exp['name']
@@ -151,7 +164,7 @@ class logicParser:
                 }
             exp['exp2'] = {
                 'name' : 'implic',
-                'exp1' : exp2.copy(), 
+                'exp1' : exp2.copy(),
                 'exp2' : exp1.copy()
                 }
         # Recursive
@@ -166,7 +179,7 @@ class logicParser:
     def MovNotIn(self, exp):
         """
         Modify the Tree 'exp' to move Not inwards.
-        
+
         Return None
         """
         name = exp['name']
@@ -237,10 +250,10 @@ class logicParser:
     def StandVar(self, exp, ever):
         """
         Standardize the Variables of Tree 'exp'.
-        
+
         exp - the Tree
         ever - a set of the variables used ever
-        
+
         Return a set of the variables in the Tree 'exp'
         """
         name = exp['name']
@@ -294,8 +307,7 @@ class logicParser:
             self.Skolem(exp['exp'], rule, field)
         elif 'pred' == name:
             arglist = exp['arg']
-            exp['arg'] = [rule[x] if rule.has_key(x) else x
-            for x in arglist]
+            exp['arg'] = [rule[x] if x in rule else x for x in arglist]
 
     # Drop Universal Quantifiers
     def DropUnivQuan(self, exp):
@@ -357,7 +369,7 @@ class logicParser:
                     }
             self.ConvertToCNF(exp['exp1'])
             self.ConvertToCNF(exp['exp2'])
-    
+
     # Show the Expression from the Tree
     def ShowExp(self, exp):
         name = exp['name']
@@ -409,74 +421,69 @@ class logicParser:
     def Exec(self, Statement):
         try:
             self.tree = self.Parser.parse(Statement)
-            print 'Oringal: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'Original')
             self.EliImplic(self.tree)
-            print 'EliImplic: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'EliImplic')
             self.MovNotIn(self.tree)
-            print 'MovNotIn: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'MovNotIn')
             self.StandVar(self.tree, [])
-            print 'StandVar: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'StandVar')
             self.Skolem(self.tree, {}, [])
-            print 'Skolemize: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'Skolemize')
             self.DropUnivQuan(self.tree)
-            print 'DropUnivQuan: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'DropUnivQuan')
             self.ConvertToCNF(self.tree)
-            print 'ConvertToCNF: ', self.ShowExp(self.tree)
-            print
+            display(self.ShowExp(self.tree), 'ConvertToCNF')
         except lex.LexError as e:
-            print Statement
-            print ' ' * e.args[0] + '^'
-            print e.text
-            print
+            display(Statement)
+            display(' ' * e.args[0] + '^')
+            display(e.text)
+            display()
         except yacc.YaccError as e:
-            print Statement
-            print ' ' * e.args[0] + '^'
-            print 'Syntax Error'
-            print
+            display(Statement)
+            display(' ' * e.args[0] + '^')
+            display('Syntax Error')
+            display()
 
 
 p = logicParser()
 example = 'Any[x, Any[y, (Person[x] & Person[y] & \
 Exist[z, Parent[x,z] & Parent[y,z]])=>(Couple[x,y] & Couple[y,x])]]'
 
+usage = """
+help for First-Order Logic Parser,
+You can input a First-Order Logic Statement,
+And it will be converted to CNF Fromat.
+
+Command:
+help, h     get help
+quit, q     quit the command
+example, e  show an example
+
+Format:
+exist:        Exist[var, exp]
+any:          Any[var, exp]
+and:          exp1 And exp2 / exp1 & exp2
+or:           exp1 Or exp2 / exp1 | exp2
+not:          Not exp / ~ exp
+implication:  exp1 => exp2
+equivalient:  exp1 <=> exp2
+"""
+
 def ShowHelp():
-    print 'help for First-Order Logic Parser,'
-    print 'You can input a First-Order Logic Statement,'
-    print 'And it will be converted to CNF Fromat.'
-    print
-    print 'Command:'
-    print 'help, h     get help'
-    print 'quit, q     quit the command'
-    print 'example, e  show an example'
-    print
-    print 'Format:'
-    print 'exist:        Exist[var, exp]'
-    print 'any:          Any[var, exp]'
-    print 'and:          exp1 And exp2 / exp1 & exp2'
-    print 'or:           exp1 Or exp2 / exp1 | exp2'
-    print 'not:          Not exp / ~ exp'
-    print 'implication:  exp1 => exp2'
-    print 'equivalient:  exp1 <=> exp2'
-    print
+    display(usage)
 
-ShowHelp()
+if '__main__' == __name__:
+    ShowHelp()
 
-while True:
-    command = raw_input('> ')
-    if command in ['quit', 'q']:
-        break
-    elif command in ['help', 'h']:
-        ShowHelp()
-    elif command in ['example', 'e']:
-        print '> ' + example
-        p.Exec(example)
-    else:
-        p.Exec(command)
-
-        
+    while True:
+        command = raw_input('> ')
+        if command in ['quit', 'q']:
+            break
+        elif command in ['help', 'h']:
+            ShowHelp()
+        elif command in ['example', 'e']:
+            print('> ' + example)
+            p.Exec(example)
+        else:
+            p.Exec(command)
