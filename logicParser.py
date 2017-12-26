@@ -25,7 +25,7 @@ def display(result='', op=None):
     else:
         sys.stdout.write("%s\n" % result)
 
-class logicParser:
+class LogicParser:
     def __init__(self):
         self.tree = {}
         #=============================================================
@@ -141,7 +141,7 @@ class logicParser:
         self.Parser = yacc.yacc()
 
     # Eliminate Implication
-    def EliImplic(self, exp):
+    def eli_implic(self, exp):
         """
         Eliminate All Implication Statement and Equivalent Statement
         in the Tree 'exp'.
@@ -170,13 +170,13 @@ class logicParser:
         # Recursive
         name = exp['name']
         if 'exist' == name or 'any' == name or 'not' == name:
-            self.EliImplic(exp['exp'])
+            self.eli_implic(exp['exp'])
         elif 'and' == name or 'or' == name:
-            self.EliImplic(exp['exp1'])
-            self.EliImplic(exp['exp2'])
+            self.eli_implic(exp['exp1'])
+            self.eli_implic(exp['exp2'])
 
     # Move Not Inwards
-    def MovNotIn(self, exp):
+    def move_not_in(self, exp):
         """
         Modify the Tree 'exp' to move Not inwards.
 
@@ -218,13 +218,13 @@ class logicParser:
         # Recursive
         name = exp['name']
         if 'not' == name or 'exist' == name or 'any' == name:
-            self.MovNotIn(exp['exp'])
+            self.move_not_in(exp['exp'])
         elif 'and' == name or 'or' == name:
-            self.MovNotIn(exp['exp1'])
-            self.MovNotIn(exp['exp2'])
+            self.move_not_in(exp['exp1'])
+            self.move_not_in(exp['exp2'])
 
     # Standardize Variables
-    def NextLabel(self, var, ever):
+    def next_label(self, var, ever):
         """
         Get Next LabelNo of var From ever.
 
@@ -247,7 +247,7 @@ class logicParser:
         else:
             return var
 
-    def StandVar(self, exp, ever):
+    def standardize_var(self, exp, ever):
         """
         Standardize the Variables of Tree 'exp'.
 
@@ -259,23 +259,23 @@ class logicParser:
         name = exp['name']
         field = []
         if 'and' == name or 'or' == name:
-            field = self.StandVar(exp['exp1'], ever)
-            field += self.StandVar(exp['exp2'], ever + field)
+            field = self.standardize_var(exp['exp1'], ever)
+            field += self.standardize_var(exp['exp2'], ever + field)
         elif 'not' == name:
-            field = self.StandVar(exp['exp'], ever)
+            field = self.standardize_var(exp['exp'], ever)
         elif 'exist' == name or 'any' == name:
-            exp['var'] = self.NextLabel(exp['var'], ever)
+            exp['var'] = self.next_label(exp['var'], ever)
             field = [exp['var']]
-            field += self.StandVar(exp['exp'], ever)
+            field += self.standardize_var(exp['exp'], ever)
         elif 'pred' == name:
             arglist = exp['arg']
-            exp['arg'] = [self.NextLabel(x, ever) for x in arglist]
+            exp['arg'] = [self.next_label(x, ever) for x in arglist]
         return field
 
-    # Skolemize
-    def Skolem(self, exp, rule, field):
+    # skolemize
+    def skolem(self, exp, rule, field):
         """
-        Drop Exist Quantifiers by Skolemize.
+        Drop Exist Quantifiers by skolemize.
 
         exp - the Tree
         rule - the Rule of Variables Mapping
@@ -285,7 +285,7 @@ class logicParser:
         """
         name = exp['name']
         if 'any' == name:
-            self.Skolem(exp['exp'], rule, field + [exp['var']])
+            self.skolem(exp['exp'], rule, field + [exp['var']])
         elif 'exist' == name:
             var = exp['var']
             newrule = rule.copy()
@@ -299,18 +299,18 @@ class logicParser:
             exp.clear()
             for key in subexp.keys():
                 exp[key] = subexp[key]
-            self.Skolem(exp, newrule, field)
+            self.skolem(exp, newrule, field)
         elif name in ['and', 'or']:
-            self.Skolem(exp['exp1'], rule, field)
-            self.Skolem(exp['exp2'], rule, field)
+            self.skolem(exp['exp1'], rule, field)
+            self.skolem(exp['exp2'], rule, field)
         elif 'not' == name:
-            self.Skolem(exp['exp'], rule, field)
+            self.skolem(exp['exp'], rule, field)
         elif 'pred' == name:
             arglist = exp['arg']
             exp['arg'] = [rule[x] if x in rule else x for x in arglist]
 
     # Drop Universal Quantifiers
-    def DropUnivQuan(self, exp):
+    def drop_univ_quan(self, exp):
         """
         Drop Universal Quantifiers Straightly:
 
@@ -318,19 +318,19 @@ class logicParser:
         """
         name = exp['name']
         if name in ['and', 'or']:
-            self.DropUnivQuan(exp['exp1'])
-            self.DropUnivQuan(exp['exp2'])
+            self.drop_univ_quan(exp['exp1'])
+            self.drop_univ_quan(exp['exp2'])
         elif 'not' == name:
-            self.DropUnivQuan(exp['exp'])
+            self.drop_univ_quan(exp['exp'])
         elif 'any' == name:
             field = exp['exp'].copy()
             exp.clear()
             for key in field.keys():
                 exp[key] = field[key]
-            self.DropUnivQuan(exp)
+            self.drop_univ_quan(exp)
 
     # Convert To CNF
-    def ConvertToCNF(self, exp):
+    def convert_to_cnf(self, exp):
         """
         Convert To CNF by Distribute OR Over AND
 
@@ -338,8 +338,8 @@ class logicParser:
         """
         name = exp['name']
         if 'or' == name:
-            self.ConvertToCNF(exp['exp1'])
-            self.ConvertToCNF(exp['exp2'])
+            self.convert_to_cnf(exp['exp1'])
+            self.convert_to_cnf(exp['exp2'])
         elif 'and' == name:
             exp1 = exp['exp1']
             exp2 = exp['exp2']
@@ -367,47 +367,47 @@ class logicParser:
                     'exp1' : exp1.copy(),
                     'exp2' : exp2['exp2']
                     }
-            self.ConvertToCNF(exp['exp1'])
-            self.ConvertToCNF(exp['exp2'])
+            self.convert_to_cnf(exp['exp1'])
+            self.convert_to_cnf(exp['exp2'])
 
     # Show the Expression from the Tree
-    def ShowExp(self, exp):
+    def show_exp(self, exp):
         name = exp['name']
         if name in ['implic', 'equal']:
             exp1 = exp['exp1']
             if exp1['name'] in ['and', 'or', 'implic', 'equal']:
-                exp1show = '(' + self.ShowExp(exp1) + ')'
+                exp1show = '(' + self.show_exp(exp1) + ')'
             else:
-                exp1show = self.ShowExp(exp1)
+                exp1show = self.show_exp(exp1)
             exp2 = exp['exp2']
             if exp2['name'] in ['and', 'or', 'implic', 'equal']:
-                exp2show = '(' + self.ShowExp(exp2) + ')'
+                exp2show = '(' + self.show_exp(exp2) + ')'
             else:
-                exp2show = self.ShowExp(exp2)
+                exp2show = self.show_exp(exp2)
             return exp1show + ' ' + symbol[name] + ' ' + exp2show
         elif name in ['and', 'or']:
             exp1 = exp['exp1']
             L = {'and', 'or', 'implic', 'equal'} - {name}
             if exp1['name'] in L:
-                exp1show = '(' + self.ShowExp(exp1) + ')'
+                exp1show = '(' + self.show_exp(exp1) + ')'
             else:
-                exp1show = self.ShowExp(exp1)
+                exp1show = self.show_exp(exp1)
             exp2 = exp['exp2']
             if exp2['name'] in L:
-                exp2show = '(' + self.ShowExp(exp2) + ')'
+                exp2show = '(' + self.show_exp(exp2) + ')'
             else:
-                exp2show = self.ShowExp(exp2)
+                exp2show = self.show_exp(exp2)
             return exp1show + ' ' + symbol[name] + ' ' + exp2show
         elif name in ['exist', 'any']:
             var = exp['var']
-            subexp = self.ShowExp(exp['exp'])
+            subexp = self.show_exp(exp['exp'])
             return symbol[name] + '[%s, %s]' % (var, subexp)
         elif 'not' == name:
             subexp = exp['exp']
             if subexp['name'] in ['and', 'or', 'implic', 'equal']:
-                expshow = '(' + self.ShowExp(subexp) + ')'
+                expshow = '(' + self.show_exp(subexp) + ')'
             else:
-                expshow = self.ShowExp(subexp)
+                expshow = self.show_exp(subexp)
             return 'Not ' + expshow
         elif 'pred' == name:
             expshow = exp['pred'] + '[' + exp['arg'][0]
@@ -418,35 +418,35 @@ class logicParser:
         return ''
 
     # Parse the First-Order Logic Statement
-    def Exec(self, Statement):
+    def exec(self, statement):
         try:
-            self.tree = self.Parser.parse(Statement)
-            display(self.ShowExp(self.tree), 'Original')
-            self.EliImplic(self.tree)
-            display(self.ShowExp(self.tree), 'EliImplic')
-            self.MovNotIn(self.tree)
-            display(self.ShowExp(self.tree), 'MovNotIn')
-            self.StandVar(self.tree, [])
-            display(self.ShowExp(self.tree), 'StandVar')
-            self.Skolem(self.tree, {}, [])
-            display(self.ShowExp(self.tree), 'Skolemize')
-            self.DropUnivQuan(self.tree)
-            display(self.ShowExp(self.tree), 'DropUnivQuan')
-            self.ConvertToCNF(self.tree)
-            display(self.ShowExp(self.tree), 'ConvertToCNF')
+            self.tree = self.Parser.parse(statement)
+            display(self.show_exp(self.tree), 'Original')
+            self.eli_implic(self.tree)
+            display(self.show_exp(self.tree), 'eli_implic')
+            self.move_not_in(self.tree)
+            display(self.show_exp(self.tree), 'move_not_in')
+            self.standardize_var(self.tree, [])
+            display(self.show_exp(self.tree), 'standardize_var')
+            self.skolem(self.tree, {}, [])
+            display(self.show_exp(self.tree), 'skolemize')
+            self.drop_univ_quan(self.tree)
+            display(self.show_exp(self.tree), 'drop_univ_quan')
+            self.convert_to_cnf(self.tree)
+            display(self.show_exp(self.tree), 'convert_to_cnf')
         except lex.LexError as e:
-            display(Statement)
+            display(statement)
             display(' ' * e.args[0] + '^')
             display(e.text)
             display()
         except yacc.YaccError as e:
-            display(Statement)
+            display(statement)
             display(' ' * e.args[0] + '^')
             display('Syntax Error')
             display()
 
 
-p = logicParser()
+p = LogicParser()
 example = 'Any[x, Any[y, (Person[x] & Person[y] & \
 Exist[z, Parent[x,z] & Parent[y,z]])=>(Couple[x,y] & Couple[y,x])]]'
 
@@ -470,20 +470,20 @@ implication:  exp1 => exp2
 equivalient:  exp1 <=> exp2
 """
 
-def ShowHelp():
+def show_help():
     display(usage)
 
 if '__main__' == __name__:
-    ShowHelp()
+    show_help()
 
     while True:
         command = raw_input('> ')
         if command in ['quit', 'q']:
             break
         elif command in ['help', 'h']:
-            ShowHelp()
+            show_help()
         elif command in ['example', 'e']:
-            print('> ' + example)
-            p.Exec(example)
+            display('> ' + example)
+            p.exec(example)
         else:
-            p.Exec(command)
+            p.exec(command)

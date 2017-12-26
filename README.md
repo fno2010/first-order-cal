@@ -15,12 +15,12 @@ A simple calculator which can convert a first-order logic expression to its CNF
 This calculator is written by PLY (Python Lex & Yacc). You need to install it
 as the dependency. (It should be the only dependency.)
 
-``` python
+``` bash
 pip install --user -r requirements.txt
 ```
 
 And then, you can run it directly or use Python explicitly:
 
-``` python
+``` bash
 python logicParser.py
 ```
